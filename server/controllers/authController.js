@@ -224,3 +224,61 @@ exports.logout = async (req, res) => {
     });
   }
 };
+
+// @route  PUT /api/auth/password
+// @access Private
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide current and new password',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+    }
+
+    // ✅ Get user with password field
+    const user = await User.findById(req.user.id).select('+password');
+
+    // ✅ Check current password is correct
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
+    }
+
+    // ✅ Check new password is different
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be different from current password',
+      });
+    }
+
+    // ✅ Save triggers pre save hook which hashes password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
+  }
+};

@@ -172,17 +172,36 @@ exports.placeOrder = async (req, res) => {
 // @access Private (student)
 exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ student: req.user.id })
-      .populate('cafe', 'name location')
-      .sort({ createdAt: -1 });
+    const { page = 1, limit = 10, status } = req.query;
 
-    res.json({ success: true, orders });
+    const filter = { student: req.user.id };
+    if (status) filter.status = status;
+
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find(filter)
+      .populate('cafe', 'name location')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Order.countDocuments(filter);
+
+    res.json({
+      success: true,
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: process.env.NODE_ENV === 'development'
         ? error.message
-        : 'Server error'
+        : 'Server error',
     });
   }
 };
@@ -218,6 +237,35 @@ exports.getOrder = async (req, res) => {
 exports.getCafeOrders = async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
+
+    // ✅ Check cafe belongs to user's college
+    const cafe = await Cafe.findById(req.params.cafeId);
+    if (!cafe) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cafe not found',
+      });
+    }
+
+    // ✅ Check cafe belongs to same college
+    if (cafe.college.toString() !== req.user.college.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this cafe orders',
+      });
+    }
+
+    // ✅ Cafe admin can only see their own cafe orders
+    if (
+      req.user.role === 'cafe_admin' &&
+      cafe.admin.toString() !== req.user.id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this cafe orders',
+      });
+    }
+
     const filter = { cafe: req.params.cafeId };
     if (status) filter.status = status;
 
@@ -231,8 +279,8 @@ exports.getCafeOrders = async (req, res) => {
 
     const total = await Order.countDocuments(filter);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       orders,
       pagination: {
         total,
@@ -241,15 +289,14 @@ exports.getCafeOrders = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: process.env.NODE_ENV === 'development'
         ? error.message
-        : 'Server error'
+        : 'Server error',
     });
   }
 };
-
 // @route  PUT /api/orders/:id/status
 // @access Private (cafe_admin)
 exports.updateOrderStatus = async (req, res) => {

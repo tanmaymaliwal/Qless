@@ -32,6 +32,31 @@ exports.addToWallet = async (req, res) => {
       });
     }
 
+    // ✅ Max single top up limit
+    if (amount > 5000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum top up amount is ₹5000 at once',
+      });
+    }
+
+    // ✅ Check current balance
+    const currentWallet = await Wallet.findOne({ user: req.user.id });
+    if (!currentWallet) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wallet not found',
+      });
+    }
+
+    // ✅ Max wallet balance limit
+    if (currentWallet.balance + amount > 10000) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum wallet balance is ₹10000. Current balance: ₹${currentWallet.balance}`,
+      });
+    }
+
     const wallet = await Wallet.findOneAndUpdate(
       { user: req.user.id },
       {
@@ -49,7 +74,12 @@ exports.addToWallet = async (req, res) => {
 
     res.json({ success: true, wallet });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
   }
 };
 
