@@ -26,40 +26,73 @@ exports.placeOrder = async (req, res) => {
       });
     }
 
+    // ✅ Check cafe belongs to same college as student
+    if (cafe.college.toString() !== req.user.college.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only order from your college cafes',
+      });
+    }
+
+    // ✅ Check cafe is open right now
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    if (currentTime < cafe.openTime || currentTime > cafe.closeTime) {
+      return res.status(400).json({
+        success: false,
+        message: `Cafe is closed. Open from ${cafe.openTime} to ${cafe.closeTime}`,
+      });
+    }
+
     // Build order items and calculate total
     let totalAmount = 0;
     const orderItems = [];
 
     for (const item of items) {
       const menuItem = await MenuItem.findById(item.menuItemId);
-      if (!menuItem || !menuItem.isAvailable) {
-        return res.status(400).json({
+
+      if (!menuItem) {
+        return res.status(404).json({
           success: false,
-          message: `Item ${menuItem?.name || item.menuItemId} is not available`,
+          message: `Menu item not found`,
         });
       }
+
+      if (!menuItem.isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: `${menuItem.name} is not available right now`,
+        });
+      }
+
+      // ✅ Check menu item belongs to correct cafe
+      if (menuItem.cafe.toString() !== cafeId) {
+        return res.status(400).json({
+          success: false,
+          message: `${menuItem.name} does not belong to this cafe`,
+        });
+      }
+
       orderItems.push({
         menuItem: menuItem._id,
         name: menuItem.name,
         price: menuItem.price,
         quantity: item.quantity,
       });
+
       totalAmount += menuItem.price * item.quantity;
     }
 
-    // Check wallet balance
-    if (paymentMethod === 'wallet') {
-      const wallet = await Wallet.findOne({ user: req.user.id });
-      if (!wallet || wallet.balance < totalAmount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Insufficient wallet balance',
-        });
-      }
-
-      // Deduct from wallet
-      await Wallet.findOneAndUpdate(
-        { user: req.user.id },
+    // ✅ Atomic wallet deduction
+    // Checks balance AND deducts in single operation
+    // Prevents race condition
+    if (!paymentMethod || paymentMethod === 'wallet') {
+      const wallet = await Wallet.findOneAndUpdate(
+        {
+          user: req.user.id,
+          balance: { $gte: totalAmount }, // ✅ only update if balance is enough
+        },
         {
           $inc: { balance: -totalAmount },
           $push: {
@@ -69,8 +102,17 @@ exports.placeOrder = async (req, res) => {
               description: `Order at ${cafe.name}`,
             },
           },
-        }
+        },
+        { new: true }
       );
+
+      // ✅ If wallet is null → balance was insufficient
+      if (!wallet) {
+        return res.status(400).json({
+          success: false,
+          message: 'Insufficient wallet balance',
+        });
+      }
     }
 
     // Generate QR
@@ -104,7 +146,12 @@ exports.placeOrder = async (req, res) => {
       order,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -118,7 +165,12 @@ exports.getMyOrders = async (req, res) => {
 
     res.json({ success: true, orders });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -139,7 +191,12 @@ exports.getOrder = async (req, res) => {
 
     res.json({ success: true, order });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -147,17 +204,36 @@ exports.getOrder = async (req, res) => {
 // @access Private (cafe_admin)
 exports.getCafeOrders = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, page = 1, limit = 20 } = req.query;
     const filter = { cafe: req.params.cafeId };
     if (status) filter.status = status;
 
+    const skip = (page - 1) * limit;
+
     const orders = await Order.find(filter)
       .populate('student', 'name email phone')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    res.json({ success: true, orders });
+    const total = await Order.countDocuments(filter);
+
+    res.json({ 
+      success: true, 
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -167,7 +243,14 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const validStatuses = ['confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+    const validStatuses = [
+      'confirmed', 
+      'preparing', 
+      'ready', 
+      'delivered', 
+      'cancelled'
+    ];
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -193,7 +276,12 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json({ success: true, order });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -221,6 +309,7 @@ exports.scanQR = async (req, res) => {
       });
     }
 
+    // ✅ Check all invalid statuses
     if (order.status === 'delivered') {
       return res.status(400).json({
         success: false,
@@ -235,6 +324,15 @@ exports.scanQR = async (req, res) => {
       });
     }
 
+    // ✅ Check QR token expiry
+    const orderAge = (new Date() - new Date(order.createdAt)) / 1000 / 60 / 60;
+    if (orderAge > 24) {
+      return res.status(400).json({
+        success: false,
+        message: 'QR code has expired',
+      });
+    }
+
     // Mark as delivered
     order.status = 'delivered';
     order.deliveredAt = new Date();
@@ -246,7 +344,12 @@ exports.scanQR = async (req, res) => {
       order,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
 
@@ -277,7 +380,7 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
-    // Refund to wallet
+    // ✅ Atomic refund to wallet
     await Wallet.findOneAndUpdate(
       { user: req.user.id },
       {
@@ -303,6 +406,12 @@ exports.cancelOrder = async (req, res) => {
       order,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
+
