@@ -188,4 +188,39 @@ exports.registerAdmin = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+
+ 
+
+};
+
+ // @route  POST /api/auth/logout
+// @access Private
+exports.logout = async (req, res) => {
+  try {
+    const token = req.headers.authorization.split(' ')[1];
+
+    // Get token expiry
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const expiry = decoded.exp - Math.floor(Date.now() / 1000);
+
+    // ✅ Blacklist token in Redis until it expires
+    const redisClient = require('../config/redis');
+    await redisClient.setEx(
+      `blacklist:${token}`,
+      expiry,
+      'blacklisted'
+    );
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
+  }
 };
