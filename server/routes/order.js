@@ -9,8 +9,10 @@ const {
   cancelOrder,
 } = require('../controllers/orderController');
 const { protect, authorize } = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { orderValidator } = require('../middleware/validators');
 
-router.post('/', protect, authorize('student'), placeOrder);
+router.post('/', protect, authorize('student'), orderValidator, validate, placeOrder);
 router.get('/my', protect, authorize('student'), getMyOrders);
 router.get('/:id', protect, getOrder);
 router.get('/cafe/:cafeId', protect, authorize('cafe_admin', 'college_admin'), getCafeOrders);
