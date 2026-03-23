@@ -82,7 +82,7 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email })
       .select('+password')
-      .populate('college', 'name code');
+      .populate('college', 'name code isActive plan');
 
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({
@@ -94,7 +94,15 @@ exports.login = async (req, res) => {
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Account is deactivated',
+        message: 'Your account is deactivated',
+      });
+    }
+
+    // ✅ Check college is active
+    if (user.college && !user.college.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your college account is deactivated',
       });
     }
 
@@ -110,13 +118,18 @@ exports.login = async (req, res) => {
         role: user.role,
         college: user.college?.name,
         collegeId: user.college?._id,
+        plan: user.college?.plan,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ 
+      success: false, 
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error'
+    });
   }
 };
-
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)

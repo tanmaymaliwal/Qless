@@ -44,7 +44,20 @@ exports.placeOrder = async (req, res) => {
         message: `Cafe is closed. Open from ${cafe.openTime} to ${cafe.closeTime}`,
       });
     }
+    // Duplicate order prevention
+    const existingOrder = await Order.findOne({
+      student: req.user.id,
+      cafe: cafeId,
+      status: { $in: ['pending', 'confirmed', 'preparing'] },
+      createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
+    });
 
+    if (existingOrder) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an active order at this cafe. Please wait.',
+      });
+    }
     // Build order items and calculate total
     let totalAmount = 0;
     const orderItems = [];
