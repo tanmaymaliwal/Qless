@@ -8,6 +8,7 @@ const {
   changePassword,
   getInviteCode,
   refreshInviteCode,
+  refreshToken,
 } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -24,5 +25,6 @@ router.post('/logout', protect, logout);
 router.put('/password', protect, changePassword);
 router.get('/invite-code', protect, authorize('college_admin', 'super_admin'), getInviteCode);
 router.put('/invite-code/refresh', protect, authorize('college_admin', 'super_admin'), refreshInviteCode);
+router.post('/refresh', refreshToken);
 
 module.exports = router;

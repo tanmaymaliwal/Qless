@@ -3,6 +3,14 @@ const Wallet = require('../models/Wallet');
 const College = require('../models/College');
 const jwt = require('jsonwebtoken');
 
+
+const generateRefreshToken = (id) => {
+  return jwt.sign(
+    { id }, 
+    process.env.JWT_REFRESH_SECRET, 
+    { expiresIn: '30d' }
+  );
+};
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
@@ -115,10 +123,12 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.json({
       success: true,
       token,
+      refreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -345,6 +355,60 @@ exports.refreshInviteCode = async (req, res) => {
       message: process.env.NODE_ENV === 'development'
         ? error.message
         : 'Server error',
+    });
+  }
+};
+
+// @route  POST /api/auth/refresh
+// @access Public
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token required',
+      });
+    }
+
+    // ✅ Check if blacklisted
+    const redisClient = require('../config/redis');
+    const isBlacklisted = await redisClient.get(
+      `blacklist:${refreshToken}`
+    );
+    if (isBlacklisted) {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is invalid',
+      });
+    }
+
+    // ✅ Verify refresh token
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found or inactive',
+      });
+    }
+
+    // ✅ Generate new access token
+    const newToken = generateToken(user._id, user.role);
+
+    res.json({
+      success: true,
+      token: newToken,
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: 'Invalid refresh token',
     });
   }
 };
