@@ -104,7 +104,7 @@ exports.placeOrder = async (req, res) => {
       const wallet = await Wallet.findOneAndUpdate(
         {
           user: req.user.id,
-          balance: { $gte: totalAmount }, // ✅ only update if balance is enough
+          balance: { $gte: totalAmount }, // only update if balance is enough
         },
         {
           $inc: { balance: -totalAmount },
@@ -119,7 +119,7 @@ exports.placeOrder = async (req, res) => {
         { new: true }
       );
 
-      // ✅ If wallet is null → balance was insufficient
+      // If wallet is null → balance was insufficient
       if (!wallet) {
         return res.status(400).json({
           success: false,
@@ -322,7 +322,7 @@ exports.scanQR = async (req, res) => {
       });
     }
 
-    // ✅ Check all invalid statuses
+    //  Check all invalid statuses
     if (order.status === 'delivered') {
       return res.status(400).json({
         success: false,
@@ -337,9 +337,9 @@ exports.scanQR = async (req, res) => {
       });
     }
 
-    // ✅ Check QR token expiry
+    // Check QR token expiry
     const orderAge = (new Date() - new Date(order.createdAt)) / 1000 / 60 / 60;
-    if (orderAge > 24) {
+    if (orderAge > 4) {
       return res.status(400).json({
         success: false,
         message: 'QR code has expired',
@@ -393,7 +393,7 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
-    // ✅ Atomic refund to wallet
+    // Atomic refund to wallet
     await Wallet.findOneAndUpdate(
       { user: req.user.id },
       {
