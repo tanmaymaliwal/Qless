@@ -28,14 +28,17 @@ exports.register = async (req, res) => {
       });
     }
 
+    // ✅ Find college by invite code not college code
     const college = await College.findOne({
-      code: collegeCode.toUpperCase(),
+      inviteCode: collegeCode.toUpperCase(),
       isActive: true,
+      inviteCodeExpiry: { $gt: new Date() }
     });
+
     if (!college) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid college code',
+        message: 'Invalid or expired invite code',
       });
     }
 
@@ -65,7 +68,12 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
   }
 };
 
@@ -272,6 +280,64 @@ exports.changePassword = async (req, res) => {
     res.json({
       success: true,
       message: 'Password changed successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
+  }
+};
+
+// @route  GET /api/auth/invite-code
+// @access Private (college_admin)
+exports.getInviteCode = async (req, res) => {
+  try {
+    const college = await College.findById(req.user.college);
+    if (!college) {
+      return res.status(404).json({
+        success: false,
+        message: 'College not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      inviteCode: college.inviteCode,
+      expiresAt: college.inviteCodeExpiry,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
+    });
+  }
+};
+
+// @route  PUT /api/auth/invite-code/refresh
+// @access Private (college_admin)
+exports.refreshInviteCode = async (req, res) => {
+  try {
+    const crypto = require('crypto');
+
+    const college = await College.findByIdAndUpdate(
+      req.user.college,
+      {
+        inviteCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
+        inviteCodeExpiry: new Date(+new Date() + 30 * 24 * 60 * 60 * 1000)
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Invite code refreshed',
+      inviteCode: college.inviteCode,
+      expiresAt: college.inviteCodeExpiry,
     });
   } catch (error) {
     res.status(500).json({

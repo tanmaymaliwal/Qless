@@ -1,27 +1,24 @@
 const Cafe = require('../models/Cafe');
 
-// @route  GET /api/cafes
-// @access Private
 exports.getCafes = async (req, res) => {
   try {
     const cafes = await Cafe.find({
       college: req.user.college,
-      isActive: true
+      isActive: true,
+      isDeleted: false,
     }).populate('admin', 'name email');
 
     res.json({ success: true, cafes });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
 
-// @route  GET /api/cafes/:id
-// @access Private
 exports.getCafe = async (req, res) => {
   try {
     const cafe = await Cafe.findById(req.params.id)
@@ -34,7 +31,6 @@ exports.getCafe = async (req, res) => {
       });
     }
 
-    // ✅ Check cafe belongs to same college as user
     if (cafe.college.toString() !== req.user.college.toString()) {
       return res.status(403).json({
         success: false,
@@ -44,29 +40,26 @@ exports.getCafe = async (req, res) => {
 
     res.json({ success: true, cafe });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
 
-// @route  POST /api/cafes
-// @access Private (college_admin)
 exports.createCafe = async (req, res) => {
   try {
-    const { 
-      name, 
-      description, 
-      location, 
-      openTime, 
-      closeTime, 
-      maxOrdersPerSlot 
+    const {
+      name,
+      description,
+      location,
+      openTime,
+      closeTime,
+      maxOrdersPerSlot
     } = req.body;
 
-    // ✅ Always assign cafe to admin's own college
     const cafe = await Cafe.create({
       name,
       description,
@@ -74,23 +67,21 @@ exports.createCafe = async (req, res) => {
       openTime,
       closeTime,
       maxOrdersPerSlot,
-      college: req.user.college, // ✅ taken from token not request body
+      college: req.user.college,
       admin: req.user.id,
     });
 
     res.status(201).json({ success: true, cafe });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
 
-// @route  PUT /api/cafes/:id
-// @access Private (cafe_admin, college_admin)
 exports.updateCafe = async (req, res) => {
   try {
     const cafe = await Cafe.findById(req.params.id);
@@ -102,7 +93,6 @@ exports.updateCafe = async (req, res) => {
       });
     }
 
-    // ✅ Check cafe belongs to same college
     if (cafe.college.toString() !== req.user.college.toString()) {
       return res.status(403).json({
         success: false,
@@ -110,7 +100,6 @@ exports.updateCafe = async (req, res) => {
       });
     }
 
-    // ✅ Cafe admin can only edit their own cafe
     if (
       req.user.role === 'cafe_admin' &&
       cafe.admin.toString() !== req.user.id.toString()
@@ -121,7 +110,6 @@ exports.updateCafe = async (req, res) => {
       });
     }
 
-    // ✅ Prevent changing college ownership
     delete req.body.college;
     delete req.body.admin;
 
@@ -133,17 +121,15 @@ exports.updateCafe = async (req, res) => {
 
     res.json({ success: true, cafe: updated });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
 
-// @route  PUT /api/cafes/:id/toggle
-// @access Private (cafe_admin, college_admin)
 exports.toggleCafe = async (req, res) => {
   try {
     const cafe = await Cafe.findById(req.params.id);
@@ -155,7 +141,6 @@ exports.toggleCafe = async (req, res) => {
       });
     }
 
-    // ✅ Check cafe belongs to same college
     if (cafe.college.toString() !== req.user.college.toString()) {
       return res.status(403).json({
         success: false,
@@ -163,7 +148,6 @@ exports.toggleCafe = async (req, res) => {
       });
     }
 
-    // ✅ Cafe admin can only toggle their own cafe
     if (
       req.user.role === 'cafe_admin' &&
       cafe.admin.toString() !== req.user.id.toString()
@@ -183,17 +167,15 @@ exports.toggleCafe = async (req, res) => {
       cafe
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
 
-// @route  DELETE /api/cafes/:id
-// @access Private (college_admin)
 exports.deleteCafe = async (req, res) => {
   try {
     const cafe = await Cafe.findById(req.params.id);
@@ -205,7 +187,6 @@ exports.deleteCafe = async (req, res) => {
       });
     }
 
-    // ✅ Only college admin of same college can delete
     if (cafe.college.toString() !== req.user.college.toString()) {
       return res.status(403).json({
         success: false,
@@ -213,28 +194,22 @@ exports.deleteCafe = async (req, res) => {
       });
     }
 
-    await cafe.deleteOne();
+    // ✅ Soft delete
+    cafe.isDeleted = true;
+    cafe.deletedAt = new Date();
+    cafe.isActive = false;
+    await cafe.save();
 
-    res.json({ success: true, message: 'Cafe deleted' });
+    res.json({
+      success: true,
+      message: 'Cafe deleted successfully'
+    });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : 'Server error' 
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'Server error',
     });
   }
 };
-
-
-// ### What We Fixed:
-
-// Before:
-// Admin from College A → edits College B cafe ❌
-
-// After:
-// ✅ Every operation checks cafe.college === user.college
-// ✅ Cafe admin can only edit their OWN cafe
-// ✅ College field cannot be changed via request body
-// ✅ Admin field cannot be changed via request body
-// ✅ Production error messages hidden
