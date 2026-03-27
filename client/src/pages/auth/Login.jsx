@@ -16,6 +16,7 @@ export default function Login() {
   const { mutate, isPending } = useMutation({
     mutationFn: loginApi,
     onSuccess: (res) => {
+      console.log("SUCCESS:", res.data);
       login(res.data.user, res.data.token);
       toast.success(`Welcome back, ${res.data.user.name}!`);
       const role = res.data.user.role;
@@ -24,16 +25,17 @@ export default function Login() {
       if (role === "college_admin") navigate("/college/dashboard");
     },
     onError: (err) => {
+      console.log("ERROR:", err.response?.data);
       toast.error(err.response?.data?.message || "Login failed");
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("SUBMITTING:", form);
     if (!form.email || !form.password) return toast.error("Fill all fields");
     mutate(form);
   };
-
   return (
     <div
       className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-10 relative overflow-hidden"
@@ -151,6 +153,7 @@ export default function Login() {
 
             {/* Submit */}
             <button
+            
               type="submit"
               disabled={isPending}
               className="btn-primary w-full mt-2 flex items-center justify-center gap-2 text-sm sm:text-base"

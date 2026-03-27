@@ -1,21 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, User, Zap } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { registerApi } from "../../api/auth";
+import { Mail, Lock, Eye, EyeOff, User, Zap, Phone, Building } from "lucide-react";
 
 export default function Register() {
   const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
   const [form, setForm] = useState({
     name: "",
+    phone: "",
     email: "",
     password: "",
     role: "student",
+    collegeCode: "",
   });
-
   const { mutate, isPending } = useMutation({
     mutationFn: registerApi,
     onSuccess: () => {
@@ -29,8 +30,9 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password)
-      return toast.error("Fill all fields");
+    
+    if (!form.name || !form.email || !form.password || !form.phone || !form.collegeCode)
+        return toast.error("Fill all fields");
     if (form.password.length < 6)
       return toast.error("Password must be at least 6 characters");
     mutate(form);
@@ -126,7 +128,22 @@ export default function Register() {
                 />
               </div>
             </div>
-
+            {/* Phone */}
+<div>
+  <label className="text-white/60 text-xs font-heading uppercase tracking-wider mb-1.5 block">
+    Phone
+  </label>
+  <div className="relative">
+    <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+    <input
+      type="tel"
+      placeholder="10-digit mobile number"
+      value={form.phone}
+      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+      className="input pl-10 text-sm"
+    />
+  </div>
+</div>
             {/* Email */}
             <div>
               <label className="text-white/60 text-xs font-heading uppercase tracking-wider mb-1.5 block">
@@ -167,7 +184,21 @@ export default function Register() {
                 </button>
               </div>
             </div>
-
+            <div>
+  <label className="text-white/60 text-xs font-heading uppercase tracking-wider mb-1.5 block">
+    College Code
+  </label>
+  <div className="relative">
+    <Building size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+    <input
+      type="text"
+      placeholder="e.g. BU2024"
+      value={form.collegeCode}
+      onChange={(e) => setForm({ ...form, collegeCode: e.target.value })}
+      className="input pl-10 text-sm"
+    />
+  </div>
+</div>
             {/* Role */}
             <div>
               <label className="text-white/60 text-xs font-heading uppercase tracking-wider mb-1.5 block">

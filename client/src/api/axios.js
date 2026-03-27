@@ -8,7 +8,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) config.headers.Authorization = `Token ${token}`;
   return config;
 });
 
@@ -21,12 +21,12 @@ api.interceptors.response.use(
       try {
         const res = await axios.post(
           "http://localhost:8000/api/auth/refresh",
-          {},
+          {  },
           { withCredentials: true }
         );
         const newToken = res.data.token;
         useAuthStore.getState().setToken(newToken);
-        original.headers.Authorization = `Bearer ${newToken}`;
+        original.headers.Authorization = `Token ${newToken}`;
         return api(original);
       } catch {
         useAuthStore.getState().logout();
