@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { registerApi } from "../../api/auth";
+import { registerApi, registerAdminApi } from "../../api/auth";
 import { Mail, Lock, Eye, EyeOff, User, Zap, Phone, Building } from "lucide-react";
 
 export default function Register() {
@@ -18,7 +18,8 @@ export default function Register() {
     collegeCode: "",
   });
   const { mutate, isPending } = useMutation({
-    mutationFn: registerApi,
+    mutationFn: (data) =>
+      data.role === "student" ? registerApi(data) : registerAdminApi(data),
     onSuccess: () => {
       toast.success("Account created! Please login.");
       navigate("/login");
@@ -192,7 +193,7 @@ export default function Register() {
     <Building size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
     <input
       type="text"
-      placeholder="e.g. BU2024"
+      placeholder={form.role === "student" ? "Invite code e.g. A3F9B2C1" : "College code e.g. BU"}
       value={form.collegeCode}
       onChange={(e) => setForm({ ...form, collegeCode: e.target.value })}
       className="input pl-10 text-sm"
@@ -205,7 +206,7 @@ export default function Register() {
                 I am a
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {["student", "cafe_admin", "college_admin"].map((role) => (
+                {["student", "cafe_admin"].map((role) => (
                   <button
                     key={role}
                     type="button"

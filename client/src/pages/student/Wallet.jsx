@@ -17,19 +17,24 @@ export default function StudentWallet() {
   const { data: walletData, isLoading: walletLoading } = useQuery({
     queryKey: ["wallet"],
     queryFn: () => getWalletApi().then((r) => r.data),
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const { data: expensesData } = useQuery({
     queryKey: ["expenses"],
-    queryFn: () => getExpensesApi().then((r) => r.data),
+    queryFn: () => getWalletApi().then((r) => {
+      console.log("Wallet API response:", r.data);
+      return r.data;
+    }),
   });
 
   const { mutate: addFunds, isPending } = useMutation({
     mutationFn: addFundsApi,
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Funds added!");
-      queryClient.invalidateQueries(["wallet"]);
-      queryClient.invalidateQueries(["expenses"]);
+      await queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      await queryClient.refetchQueries({ queryKey: ["wallet"] });
       setAmount("");
       setShowAdd(false);
     },
@@ -39,13 +44,15 @@ export default function StudentWallet() {
   });
 
   const handleAddFunds = () => {
+    console.log("Add funds clicked, amount:", amount);
     const val = parseFloat(amount);
     if (!val || val <= 0) return toast.error("Enter a valid amount");
     if (val > 10000) return toast.error("Max ₹10,000 at a time");
+    console.log("Calling addFunds with:", { amount: val });
     addFunds({ amount: val });
   };
 
-  const balance = walletData?.balance || 0;
+  const balance = walletData?.wallet?.balance || 0;
   const expenses = expensesData?.expenses || [];
 
   const formatTime = (dateStr) => {

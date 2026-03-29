@@ -184,7 +184,7 @@ export default function MenuManagement() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, isAvailable: !form.isAvailable })}
@@ -197,7 +197,33 @@ export default function MenuManagement() {
                     }`} />
                   </button>
                   <span className="text-white/60 text-sm font-body">Available</span>
-                </div>
+                </div> */}
+
+<div className="flex items-center gap-3">
+  <button
+    type="button"
+    onClick={() =>
+      setForm({ ...form, isAvailable: !form.isAvailable })
+    }
+    className={`relative w-11 h-6 rounded-full transition-all duration-300 ease-in-out ${
+      form.isAvailable
+        ? "bg-brand-500 shadow-[0_0_10px_rgba(249,115,22,0.6)]"
+        : "bg-dark-700 border border-white/10"
+    }`}
+  >
+    <span
+      className={`absolute top-1/2 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ease-in-out -translate-y-1/2 ${
+        form.isAvailable
+          ? "translate-x-5 scale-105"
+          : "translate-x-0 scale-100"
+      }`}
+    />
+  </button>
+
+  <span className="text-white/60 text-sm font-body">
+    Available
+  </span>
+</div>
 
                 <button
                   type="submit"

@@ -32,7 +32,7 @@ export default function StudentHome() {
   };
 
   const cafes = cafesData?.cafes || [];
-  const balance = walletData?.balance || 0;
+  const balance = walletData?.wallet?.balance || 0;
 
   return (
     <div className="min-h-screen bg-dark-900">

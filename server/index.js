@@ -22,6 +22,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use('/api/super', require('./routes/admin'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/cafes', require('./routes/cafe'));
 app.use('/api/menu', require('./routes/menu'));

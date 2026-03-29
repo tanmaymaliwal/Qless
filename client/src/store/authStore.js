@@ -6,19 +6,35 @@ export const useAuthStore = create(
     (set) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
 
       setToken: (token) => set({ token }),
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-      login: (user, token) => set({ user, token, isAuthenticated: true }),
+      login: (user, token, refreshToken) => set({
+        user,
+        token,
+        refreshToken,
+        isAuthenticated: true,
+      }),
 
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => set({
+        user: null,
+        token: null,
+        refreshToken: null,
+        isAuthenticated: false,
+      }),
     }),
     {
       name: "qless-auth",
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({
+        token: state.token,
+        refreshToken: state.refreshToken,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );

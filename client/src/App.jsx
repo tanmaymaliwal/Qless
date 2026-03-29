@@ -3,6 +3,11 @@ import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 
+//Super admin 
+import SuperDashboard from "./pages/super-admin/Dashboard";
+import SuperColleges from "./pages/super-admin/Colleges";
+import SuperUsers from "./pages/super-admin/Users";
+import SuperCafes from "./pages/super-admin/Cafes";
 // Auth pages
 import Login    from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -42,6 +47,14 @@ export default function App() {
           }}
         />
         <Routes>
+          {/* super admin */}
+          {/* Super Admin */}
+          <Route element={<ProtectedRoute allowedRoles={["super_admin"]} />}>
+            <Route path="/super/dashboard" element={<SuperDashboard />} />
+            <Route path="/super/colleges" element={<SuperColleges />} />
+            <Route path="/super/users"    element={<SuperUsers />} />
+            <Route path="/super/cafes"    element={<SuperCafes />} />
+          </Route>
           {/* Public */}
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />

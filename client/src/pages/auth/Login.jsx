@@ -17,12 +17,14 @@ export default function Login() {
     mutationFn: loginApi,
     onSuccess: (res) => {
       console.log("SUCCESS:", res.data);
-      login(res.data.user, res.data.token);
+      login(res.data.user, res.data.token,res.data.refreshToken);
+      console.log("Login response:", res.data);
       toast.success(`Welcome back, ${res.data.user.name}!`);
       const role = res.data.user.role;
       if (role === "student")       navigate("/home");
       if (role === "cafe_admin")    navigate("/cafe/dashboard");
       if (role === "college_admin") navigate("/college/dashboard");
+      if (role === "super_admin")   navigate("/super/dashboard");
     },
     onError: (err) => {
       console.log("ERROR:", err.response?.data);
