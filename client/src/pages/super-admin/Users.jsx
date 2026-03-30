@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, X, User, Mail, Phone, Zap, Search, ToggleLeft, ToggleR
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 
-const EMPTY_FORM = { name: "", email: "", password: "", phone: "", role: "college_admin", collegeCode: "" };
+const EMPTY_FORM = { name: "", email: "", password: "", phone: "", role: "college_admin", collegeCode: "", cafeId: "" };
 const ROLES = ["college_admin", "cafe_admin", "student"];
 
 const ROLE_COLORS = {
@@ -32,6 +32,11 @@ export default function SuperUsers() {
   const { data: collegesData } = useQuery({
     queryKey: ["super-colleges"],
     queryFn: () => api.get("/super/colleges").then((r) => r.data),
+  });
+
+  const { data: cafesData } = useQuery({
+    queryKey: ["super-cafes"],
+    queryFn: () => api.get("/super/cafes").then((r) => r.data),
   });
 
   const { mutate: createUser, isPending } = useMutation({
@@ -64,6 +69,7 @@ export default function SuperUsers() {
 
   const users = data?.users || [];
   const colleges = collegesData?.colleges || [];
+  const cafes = cafesData?.cafes || [];
 
   const filtered = users.filter((u) => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -205,7 +211,26 @@ export default function SuperUsers() {
                     </select>
                   </div>
                 </div>
-
+                
+                {form.role === "cafe_admin" && (
+  <div>
+    <label className="text-white/60 text-xs font-heading uppercase tracking-wider mb-1.5 block">
+      Assign Cafe
+    </label>
+    <select
+      value={form.cafeId}
+      onChange={(e) => setForm({ ...form, cafeId: e.target.value })}
+      className="input text-sm appearance-none"
+    >
+      <option value="">Select cafe</option>
+      {cafes
+        .filter((c) => form.collegeCode === "" || c.college?.code === form.collegeCode)
+        .map((c) => (
+          <option key={c._id} value={c._id}>{c.name}</option>
+        ))}
+    </select>
+  </div>
+)}
                 <button
                   type="submit"
                   disabled={isPending}

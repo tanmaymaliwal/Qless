@@ -57,7 +57,7 @@ exports.getUsers = async (req, res) => {
 // POST /api/super/users
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, phone, role, collegeCode } = req.body;
+    const { name, email, password, phone, role, collegeCode, cafeId } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Name, email and password required' });
     }
@@ -71,6 +71,7 @@ exports.createUser = async (req, res) => {
       name, email, password, phone,
       role: role || 'college_admin',
       college: college?._id,
+      cafe: cafeId || null,
     });
     if (role === 'student') {
       await Wallet.create({ user: user._id, balance: 0 });

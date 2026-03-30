@@ -6,6 +6,7 @@ import { getMyOrdersApi, scanOrderApi } from "../../api/orders";
 import { useAuthStore } from "../../store/authStore";
 import { logoutApi } from "../../api/auth";
 import toast from "react-hot-toast";
+import api from "../../api/axios";
 
 const STATUS_CONFIG = {
   pending:   { label: "Pending",   color: "text-warning",   bg: "bg-warning/10",   icon: Clock },
@@ -24,11 +25,14 @@ const NEXT_STATUS = {
 export default function CafeDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const cafeId = user?.cafeId;
   const queryClient = useQueryClient();
 
+  
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["cafe-orders"],
-    queryFn: () => getMyOrdersApi().then((r) => r.data),
+    queryKey: ["cafe-orders", cafeId],
+    queryFn: () => api.get(`/orders/cafe/${cafeId}`).then((r) => r.data),
+    enabled: !!cafeId,
     refetchInterval: 20000,
   });
 

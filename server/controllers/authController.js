@@ -97,8 +97,9 @@ exports.login = async (req, res) => {
     }
 
     const user = await User.findOne({ email })
-      .select('+password')
-      .populate('college', 'name code isActive plan');
+  .select('+password')
+  .populate('college', 'name code isActive plan')
+  .populate('cafe', '_id name');
 
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({
@@ -137,6 +138,7 @@ exports.login = async (req, res) => {
         college: user.college?.name,
         collegeId: user.college?._id,
         plan: user.college?.plan,
+        cafeId: user.cafe,
       },
     });
   } catch (error) {

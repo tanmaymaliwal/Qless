@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     default: 'student'
   },
   college: { type: mongoose.Schema.Types.ObjectId, ref: 'College' },
+  cafe: { type: mongoose.Schema.Types.ObjectId, ref: 'Cafe' },
   phone: { type: String },
   avatar: { type: String },
   isActive: { type: Boolean, default: true },
