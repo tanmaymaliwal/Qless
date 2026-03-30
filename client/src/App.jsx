@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 
 //Super admin 
+import SuperLogin from "./pages/super-admin/Login";
 import SuperDashboard from "./pages/super-admin/Dashboard";
 import SuperColleges from "./pages/super-admin/Colleges";
 import SuperUsers from "./pages/super-admin/Users";
@@ -47,41 +48,42 @@ export default function App() {
           }}
         />
         <Routes>
-          {/* super admin */}
-          {/* Super Admin */}
-          <Route element={<ProtectedRoute allowedRoles={["super_admin"]} />}>
-            <Route path="/super/dashboard" element={<SuperDashboard />} />
-            <Route path="/super/colleges" element={<SuperColleges />} />
-            <Route path="/super/users"    element={<SuperUsers />} />
-            <Route path="/super/cafes"    element={<SuperCafes />} />
-          </Route>
-          {/* Public */}
-          <Route path="/login"        element={<Login />} />
-          <Route path="/register"     element={<Register />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/"             element={<Navigate to="/login" replace />} />
+  {/* Public */}
+  <Route path="/login"             element={<Login />} />
+  <Route path="/register"          element={<Register />} />
+  <Route path="/unauthorized"      element={<Unauthorized />} />
+  <Route path="/super-admin/login" element={<SuperLogin />} />
+  <Route path="/"                  element={<Navigate to="/login" replace />} />
 
-          {/* Student */}
-          <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-            <Route path="/home"             element={<StudentHome />} />
-            <Route path="/menu/:cafeId"     element={<StudentMenu />} />
-            <Route path="/orders"           element={<StudentOrders />} />
-            <Route path="/wallet"           element={<StudentWallet />} />
-          </Route>
+  {/* Super Admin */}
+  <Route element={<ProtectedRoute allowedRoles={["super_admin"]} />}>
+    <Route path="/super/dashboard" element={<SuperDashboard />} />
+    <Route path="/super/colleges"  element={<SuperColleges />} />
+    <Route path="/super/users"     element={<SuperUsers />} />
+    <Route path="/super/cafes"     element={<SuperCafes />} />
+  </Route>
 
-          {/* Cafe Admin */}
-          <Route element={<ProtectedRoute allowedRoles={["cafe_admin"]} />}>
-            <Route path="/cafe/dashboard"   element={<CafeDashboard />} />
-            <Route path="/cafe/menu"        element={<CafeMenu />} />
-            <Route path="/cafe/scanner"     element={<CafeScanner />} />
-          </Route>
+  {/* Student */}
+  <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+    <Route path="/home"         element={<StudentHome />} />
+    <Route path="/menu/:cafeId" element={<StudentMenu />} />
+    <Route path="/orders"       element={<StudentOrders />} />
+    <Route path="/wallet"       element={<StudentWallet />} />
+  </Route>
 
-          {/* College Admin */}
-          <Route element={<ProtectedRoute allowedRoles={["college_admin"]} />}>
-            <Route path="/college/dashboard" element={<CollegeDashboard />} />
-            <Route path="/college/cafes"     element={<CollegeCafes />} />
-          </Route>
-        </Routes>
+  {/* Cafe Admin */}
+  <Route element={<ProtectedRoute allowedRoles={["cafe_admin"]} />}>
+    <Route path="/cafe/dashboard" element={<CafeDashboard />} />
+    <Route path="/cafe/menu"      element={<CafeMenu />} />
+    <Route path="/cafe/scanner"   element={<CafeScanner />} />
+  </Route>
+
+  {/* College Admin */}
+  <Route element={<ProtectedRoute allowedRoles={["college_admin"]} />}>
+    <Route path="/college/dashboard" element={<CollegeDashboard />} />
+    <Route path="/college/cafes"     element={<CollegeCafes />} />
+  </Route>
+</Routes>
       </BrowserRouter>
     </QueryClientProvider>
   );
