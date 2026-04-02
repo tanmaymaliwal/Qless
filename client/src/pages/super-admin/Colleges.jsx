@@ -33,7 +33,7 @@ export default function SuperColleges() {
     },
   });
 
-  const { mutate: toggleCollege } = useMutation({
+  const { mutate: toggleCollege, isPending: isToggling  } = useMutation({
     mutationFn: (id) => api.put(`/super/colleges/${id}/toggle`),
     onSuccess: () => {
       toast.success("College status updated!");
@@ -236,14 +236,15 @@ export default function SuperColleges() {
                     </div>
                   </div>
                   <button
-                    onClick={() => toggleCollege(college._id)}
-                    className="flex-shrink-0"
-                  >
-                    {college.isActive ? (
-                      <ToggleRight size={28} className="text-success" />
-                    ) : (
-                      <ToggleLeft size={28} className="text-white/20" />
-                    )}
+                        onClick={() => toggleCollege(college._id)}
+                        className="flex-shrink-0 disabled:opacity-50"
+                        disabled={false}
+                      >
+                        {college.isActive ? (
+                          <ToggleRight size={28} className="text-success" />
+                        ) : (
+                          <ToggleLeft size={28} className="text-white/20" />
+                        )}
                   </button>
                 </div>
               </motion.div>

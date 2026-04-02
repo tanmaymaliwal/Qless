@@ -15,7 +15,8 @@ export default function MenuManagement() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const cafeId = user?.cafeId;
+  const cafeId = user?.cafeId?._id || user?.cafeId;
+  console.log("cafeId:", cafeId, "user:", user);
 
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -30,8 +31,8 @@ export default function MenuManagement() {
   const { mutate: saveItem, isPending } = useMutation({
     mutationFn: (data) =>
       editItem
-        ? api.put(`/menu/${editItem._id}`, data)
-        : api.post(`/menu`, { ...data, cafeId }),
+        ? api.put(`/menu/item/${editItem._id}`, data)
+        : api.post(`/menu/${cafeId}`, data),
     onSuccess: () => {
       toast.success(editItem ? "Item updated!" : "Item added!");
       queryClient.invalidateQueries(["menu", cafeId]);

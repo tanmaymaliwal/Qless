@@ -12,7 +12,7 @@ const cafeSchema = new mongoose.Schema({
   image: { type: String },
   location: { type: String },
   isActive: { type: Boolean, default: true },
-  // Soft delete fields
+  
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date },
   openTime: { type: String, default: '08:00' },

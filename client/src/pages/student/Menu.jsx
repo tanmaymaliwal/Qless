@@ -22,8 +22,8 @@ export default function StudentMenu() {
   const { data: walletData } = useQuery({
     queryKey: ["wallet"],
     queryFn: () => getWalletApi().then((r) => r.data),
+    staleTime: 0,
   });
-
   const { mutate: placeOrder, isPending } = useMutation({
     mutationFn: placeOrderApi,
     onSuccess: () => {
@@ -36,7 +36,7 @@ export default function StudentMenu() {
   });
 
   const items = menuData?.items || [];
-  const balance = walletData?.balance || 0;
+  const balance = walletData?.wallet?.balance || 0;
 
   const addToCart = (item) => {
     setCart((prev) => ({ ...prev, [item._id]: (prev[item._id] || 0) + 1 }));
@@ -60,7 +60,7 @@ export default function StudentMenu() {
     if (cartTotal > balance) return toast.error("Insufficient wallet balance");
     placeOrder({
       cafeId,
-      items: cartItems.map((i) => ({ menuItem: i._id, quantity: cart[i._id] })),
+      items: cartItems.map((i) => ({ menuItemId: i._id, quantity: cart[i._id] })),
     });
   };
 

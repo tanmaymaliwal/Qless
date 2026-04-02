@@ -33,7 +33,7 @@ export default function Scanner() {
   const handleScan = (e) => {
     e.preventDefault();
     if (!orderId.trim()) return toast.error("Enter or scan an order ID");
-    scanOrder({ orderId: orderId.trim() });
+    scanOrder({ qrToken: orderId.trim() });
   };
 
   return (
@@ -93,7 +93,7 @@ export default function Scanner() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Scan QR or enter Order ID"
+              placeholder="Scan QR or enter QR Token"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               className="input text-sm text-center tracking-widest"

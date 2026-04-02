@@ -16,7 +16,7 @@ export default function SuperCafes() {
     queryFn: () => api.get("/super/cafes").then((r) => r.data),
   });
 
-  const { mutate: toggleCafe } = useMutation({
+  const { mutate: toggleCafe, isPending: isToggling  } = useMutation({
     mutationFn: (id) => api.put(`/cafes/${id}/toggle`),
     onSuccess: () => {
       toast.success("Cafe status updated!");
@@ -121,13 +121,18 @@ export default function SuperCafes() {
                   <span className={`badge ${cafe.isActive ? "bg-success/10 text-success" : "bg-white/5 text-white/30"}`}>
                     {cafe.isActive ? "Active" : "Inactive"}
                   </span>
-                  <button onClick={() => toggleCafe(cafe._id)}>
-                    {cafe.isActive ? (
-                      <ToggleRight size={24} className="text-success" />
-                    ) : (
-                      <ToggleLeft size={24} className="text-white/20" />
-                    )}
-                  </button>
+                  
+                  <button
+                      onClick={() => toggleCollege(cafe._id)}
+                      className="flex-shrink-0 disabled:opacity-50"
+                      disabled={false}
+                    >
+                      {cafe.isActive ? (
+                        <ToggleRight size={28} className="text-success" />
+                      ) : (
+                        <ToggleLeft size={28} className="text-white/20" />
+                      )}
+                    </button>
                 </div>
               </motion.div>
             ))}

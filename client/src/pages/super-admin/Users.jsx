@@ -52,7 +52,7 @@ export default function SuperUsers() {
     },
   });
 
-  const { mutate: toggleUser } = useMutation({
+  const { mutate: toggleUser , isPending: isToggling } = useMutation({
     mutationFn: (id) => api.put(`/super/users/${id}/toggle`),
     onSuccess: () => {
       toast.success("User status updated!");
@@ -314,11 +314,16 @@ export default function SuperUsers() {
                     <p className="text-white/20 text-xs font-body mt-0.5">{user.college?.name || "—"}</p>
                   )}
                 </div>
-                <button onClick={() => toggleUser(user._id)} className="flex-shrink-0">
+               
+                <button
+                  onClick={() => toggleCollege(user._id)}
+                  className="flex-shrink-0 disabled:opacity-50"
+                  disabled={false}
+                >
                   {user.isActive ? (
-                    <ToggleRight size={24} className="text-success" />
+                    <ToggleRight size={28} className="text-success" />
                   ) : (
-                    <ToggleLeft size={24} className="text-white/20" />
+                    <ToggleLeft size={28} className="text-white/20" />
                   )}
                 </button>
               </motion.div>

@@ -1,19 +1,24 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, CheckCircle, XCircle, Loader, Zap, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle, XCircle, Loader, Zap, ShoppingBag, QrCode } from "lucide-react";
 import { getMyOrdersApi } from "../../api/orders";
 
+
+
+
 const STATUS_CONFIG = {
-  pending:    { label: "Pending",    color: "text-warning",  bg: "bg-warning/10",  icon: Clock },
+  confirmed:  { label: "Confirmed",  color: "text-info",     bg: "bg-info/10",     icon: Clock },
   preparing:  { label: "Preparing",  color: "text-brand-500", bg: "bg-brand-500/10", icon: Loader },
   ready:      { label: "Ready!",     color: "text-success",  bg: "bg-success/10",  icon: CheckCircle },
-  completed:  { label: "Completed",  color: "text-white/40", bg: "bg-white/5",     icon: CheckCircle },
+  delivered:  { label: "Delivered",  color: "text-white/40", bg: "bg-white/5",     icon: CheckCircle },
   cancelled:  { label: "Cancelled",  color: "text-danger",   bg: "bg-danger/10",   icon: XCircle },
 };
 
 export default function StudentOrders() {
   const navigate = useNavigate();
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["my-orders"],
@@ -131,13 +136,24 @@ export default function StudentOrders() {
 
                   {/* Bottom row */}
                   <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                    <span className="text-white/40 text-xs font-body">
-                      #{order._id?.slice(-6).toUpperCase()}
-                    </span>
-                    <span className="text-brand-500 font-heading font-bold text-sm">
-                      ₹{order.totalAmount}
-                    </span>
-                  </div>
+                <span className="text-white/40 text-xs font-body">
+                  #{order._id?.slice(-6).toUpperCase()}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-brand-500 font-heading font-bold text-sm">
+                    ₹{order.totalAmount}
+                  </span>
+                  {["confirmed", "preparing", "ready"].includes(order.status) && (
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="flex items-center gap-1 bg-brand-500/10 border border-brand-500/30 text-brand-500 text-xs font-heading px-2.5 py-1 rounded-lg hover:bg-brand-500/20 transition-all"
+                    >
+                      <QrCode size={12} />
+                      QR
+                    </button>
+                  )}
+                </div>
+              </div>
                 </motion.div>
               );
             })}
@@ -164,6 +180,91 @@ export default function StudentOrders() {
           </button>
         </div>
       </div>
+
+      {/* QR Modal */}
+<AnimatePresence>
+  {selectedOrder && (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setSelectedOrder(null)}
+        className="fixed inset-0 bg-black/70 z-20"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="fixed inset-0 z-30 flex items-center justify-center p-4"
+      >
+        <div className="card p-6 max-w-sm w-full text-center">
+          <h2 className="font-heading font-bold text-white text-xl mb-1">
+            Your QR Ticket
+          </h2>
+          <p className="text-white/40 text-xs font-body mb-5">
+            Show this at the cafe counter
+          </p>
+
+          {/* QR Code from backend */}
+          <div className="bg-white rounded-2xl p-4 inline-block mb-5">
+            {selectedOrder.qrCode ? (
+              <img
+                src={selectedOrder.qrCode}
+                alt="Order QR Code"
+                className="w-44 h-44 object-contain"
+              />
+            ) : (
+              <div className="w-44 h-44 flex items-center justify-center bg-gray-100 rounded-xl">
+                <QrCode size={48} className="text-gray-300" />
+                <p className="text-gray-400 text-xs mt-2">QR not available</p>
+              </div>
+            )}
+          </div>
+
+          {/* Order details */}
+          <div className="space-y-2 mb-5 text-left">
+            <div className="flex justify-between">
+              <span className="text-white/40 text-sm font-body">Order ID</span>
+              <span className="text-white font-mono text-xs">
+                #{selectedOrder._id?.slice(-8).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40 text-sm font-body">Cafe</span>
+              <span className="text-white font-heading text-sm">
+                {selectedOrder.cafe?.name}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40 text-sm font-body">Total</span>
+              <span className="text-brand-500 font-heading font-bold text-sm">
+                ₹{selectedOrder.totalAmount}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40 text-sm font-body">Status</span>
+              <span className={`font-heading font-bold text-sm ${
+                selectedOrder.status === "ready" ? "text-success" :
+                selectedOrder.status === "preparing" ? "text-brand-500" :
+                "text-warning"
+              }`}>
+                {selectedOrder.status?.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setSelectedOrder(null)}
+            className="btn-ghost w-full text-sm"
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
     </div>
   );
 }

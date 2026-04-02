@@ -73,6 +73,11 @@ exports.createUser = async (req, res) => {
       college: college?._id,
       cafe: cafeId || null,
     });
+    
+    // If cafe_admin, set them as the cafe's admin
+    if (role === 'cafe_admin' && cafeId) {
+      await Cafe.findByIdAndUpdate(cafeId, { admin: user._id });
+    }
     if (role === 'student') {
       await Wallet.create({ user: user._id, balance: 0 });
     }

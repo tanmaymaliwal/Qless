@@ -17,15 +17,16 @@ const STATUS_CONFIG = {
 };
 
 const NEXT_STATUS = {
-  pending:   "preparing",
-  preparing: "ready",
-  ready:     "completed",
+  confirmed:  "preparing",
+  preparing:  "ready",
+  ready:      "delivered",
 };
 
 export default function CafeDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const cafeId = user?.cafeId;
+  const cafeId = user?.cafeId?._id || user?.cafeId;
+const cafeName = user?.cafeId?.name || "Cafe Admin";
   const queryClient = useQueryClient();
 
   
@@ -37,7 +38,7 @@ export default function CafeDashboard() {
   });
 
   const { mutate: updateOrder } = useMutation({
-    mutationFn: ({ orderId, status }) => scanOrderApi({ orderId, status }),
+    mutationFn: ({ orderId, status }) => api.put(`/orders/${orderId}/status`, { status }),
     onSuccess: () => {
       toast.success("Order updated!");
       queryClient.invalidateQueries(["cafe-orders"]);
@@ -74,8 +75,11 @@ export default function CafeDashboard() {
             </div>
             <div>
               <span className="font-display text-xl text-white tracking-wider">QLESS</span>
-              <span className="text-white/30 text-xs font-body ml-2">Cafe Admin</span>
-            </div>
+              <span className="text-white/30 text-xs font-body ml-2">{cafeName}</span>
+            </div> 
+     
+
+            
           </div>
           <div className="flex items-center gap-2">
             <button
