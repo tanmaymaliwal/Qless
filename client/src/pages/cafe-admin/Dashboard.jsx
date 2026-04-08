@@ -9,11 +9,11 @@ import toast from "react-hot-toast";
 import api from "../../api/axios";
 
 const STATUS_CONFIG = {
-  pending:   { label: "Pending",   color: "text-warning",   bg: "bg-warning/10",   icon: Clock },
-  preparing: { label: "Preparing", color: "text-brand-500", bg: "bg-brand-500/10", icon: Loader },
-  ready:     { label: "Ready",     color: "text-success",   bg: "bg-success/10",   icon: CheckCircle },
-  completed: { label: "Completed", color: "text-white/40",  bg: "bg-white/5",      icon: CheckCircle },
-  cancelled: { label: "Cancelled", color: "text-danger",    bg: "bg-danger/10",    icon: XCircle },
+  confirmed:  { label: "In Queue",  color: "text-info",     bg: "bg-info/10",     icon: Clock },
+  preparing:  { label: "Preparing",  color: "text-brand-500", bg: "bg-brand-500/10", icon: Loader },
+  ready:      { label: "Ready",      color: "text-success",  bg: "bg-success/10",  icon: CheckCircle },
+  delivered:  { label: "Delivered",  color: "text-white/40", bg: "bg-white/5",     icon: CheckCircle },
+  cancelled:  { label: "Cancelled",  color: "text-danger",   bg: "bg-danger/10",   icon: XCircle },
 };
 
 const NEXT_STATUS = {
@@ -197,13 +197,18 @@ const cafeName = user?.cafeId?.name || "Cafe Admin";
                         ₹{order.totalAmount}
                       </span>
                       {nextStatus && (
-                        <button
-                          onClick={() => updateOrder({ orderId: order._id, status: nextStatus })}
-                          className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-                        >
-                          <Zap size={12} fill="white" />
-                          Mark {STATUS_CONFIG[nextStatus]?.label}
-                        </button>
+                       <button
+                       onClick={() => {
+                        const nextLabel = STATUS_CONFIG[nextStatus]?.label || nextStatus;
+                        if (window.confirm(`Mark order as ${nextLabel}?`)) {
+                          updateOrder({ orderId: order._id, status: nextStatus });
+                        }
+                      }}
+                       className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                     >
+                       <Zap size={12} fill="white" />
+                       Mark {STATUS_CONFIG[nextStatus]?.label}
+                     </button>
                       )}
                     </div>
                   </motion.div>

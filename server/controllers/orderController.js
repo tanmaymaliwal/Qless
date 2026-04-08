@@ -180,10 +180,11 @@ exports.getMyOrders = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const orders = await Order.find(filter)
-      .populate('cafe', 'name location')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+  .populate('cafe', 'name location')
+  .select('cafe items totalAmount status qrCode qrToken createdAt')
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(parseInt(limit));
 
     const total = await Order.countDocuments(filter);
 
@@ -358,9 +359,16 @@ exports.scanQR = async (req, res) => {
       });
     }
 
-    const order = await Order.findOne({ qrToken })
-      .populate('student', 'name email phone')
-      .populate('cafe', 'name');
+    let order = await Order.findOne({ qrToken });
+
+if (!order && qrToken.length === 8) {
+  const orders = await Order.find({
+    status: { $nin: ['delivered', 'cancelled'] }
+  });
+  order = orders.find(o =>
+    o._id.toString().slice(-8).toUpperCase() === qrToken.toUpperCase()
+  );
+}
 
     if (!order) {
       return res.status(404).json({

@@ -9,7 +9,7 @@ import { getMyOrdersApi } from "../../api/orders";
 
 
 const STATUS_CONFIG = {
-  confirmed:  { label: "Confirmed",  color: "text-info",     bg: "bg-info/10",     icon: Clock },
+  confirmed:  { label: "In Queue",  color: "text-info",     bg: "bg-info/10",     icon: Clock },
   preparing:  { label: "Preparing",  color: "text-brand-500", bg: "bg-brand-500/10", icon: Loader },
   ready:      { label: "Ready!",     color: "text-success",  bg: "bg-success/10",  icon: CheckCircle },
   delivered:  { label: "Delivered",  color: "text-white/40", bg: "bg-white/5",     icon: CheckCircle },
@@ -253,7 +253,13 @@ export default function StudentOrders() {
               </span>
             </div>
           </div>
-
+          <div className="bg-dark-700 rounded-xl p-3 mb-3 text-left">
+              <p className="text-white/40 text-xs font-body mb-1">Manual Code</p>
+              <p className="text-brand-500 font-mono text-2xl font-bold tracking-widest text-center">
+                {selectedOrder._id?.slice(-8).toUpperCase()}
+              </p>
+              <p className="text-white/20 text-xs text-center mt-1">Show this code to cafe staff</p>
+            </div>
           <button
             onClick={() => setSelectedOrder(null)}
             className="btn-ghost w-full text-sm"
