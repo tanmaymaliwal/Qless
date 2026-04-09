@@ -46,7 +46,7 @@ export default function MenuManagement() {
   });
 
   const { mutate: deleteItem } = useMutation({
-    mutationFn: (id) => api.delete(`/menu/${id}`),
+    mutationFn: (id) => api.delete(`/menu/item/${id}`),
     onSuccess: () => {
       toast.success("Item deleted!");
       queryClient.invalidateQueries(["menu", cafeId]);

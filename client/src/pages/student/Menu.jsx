@@ -35,7 +35,7 @@ export default function StudentMenu() {
     },
   });
 
-  const items = menuData?.items || [];
+  const items = (menuData?.items || []).filter((i) => i.isAvailable);
   const balance = walletData?.wallet?.balance || 0;
 
   const addToCart = (item) => {
