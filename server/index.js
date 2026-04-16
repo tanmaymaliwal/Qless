@@ -28,7 +28,7 @@ app.use('/api/cafes', require('./routes/cafe'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/orders', require('./routes/order'));
 app.use('/api/users', require('./routes/user'));
-
+app.use('/api/payment', require('./routes/payment'));
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({

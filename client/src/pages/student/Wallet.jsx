@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Wallet, Plus, TrendingDown, Zap, Clock } from "lucide-react";
-import { getWalletApi, addFundsApi, getExpensesApi } from "../../api/wallet";
+import { getWalletApi, getExpensesApi, createOrderApi, verifyPaymentApi } from "../../api/wallet";
 import toast from "react-hot-toast";
 
 const QUICK_AMOUNTS = [50, 100, 200, 500];
@@ -13,43 +13,89 @@ export default function StudentWallet() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: walletData, isLoading: walletLoading } = useQuery({
     queryKey: ["wallet"],
     queryFn: () => getWalletApi().then((r) => r.data),
     staleTime: 0,
-    cacheTime: 0,
   });
 
   const { data: expensesData } = useQuery({
     queryKey: ["expenses"],
-    queryFn: () => getWalletApi().then((r) => {
-      console.log("Wallet API response:", r.data);
-      return r.data;
-    }),
+    queryFn: () => getExpensesApi().then((r) => r.data),
   });
 
-  const { mutate: addFunds, isPending } = useMutation({
-    mutationFn: addFundsApi,
-    onSuccess: async () => {
-      toast.success("Funds added!");
-      await queryClient.invalidateQueries({ queryKey: ["wallet"] });
-      await queryClient.refetchQueries({ queryKey: ["wallet"] });
-      setAmount("");
-      setShowAdd(false);
+  const { mutate: createOrder } = useMutation({
+    mutationFn: createOrderApi,
+    onSuccess: (res) => {
+      const { order, key } = res.data;
+      openRazorpay(order, key);
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to add funds");
+      toast.error(err.response?.data?.message || "Failed to initiate payment");
+      setIsProcessing(false);
     },
   });
 
+  const { mutate: verifyPayment } = useMutation({
+    mutationFn: verifyPaymentApi,
+    onSuccess: () => {
+      toast.success("Payment successful! Wallet updated 🎉");
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.refetchQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      setAmount("");
+      setShowAdd(false);
+      setIsProcessing(false);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Payment verification failed");
+      setIsProcessing(false);
+    },
+  });
+
+  const openRazorpay = (order, key) => {
+    const options = {
+      key,
+      amount: order.amount,
+      currency: order.currency,
+      name: "Qless",
+      description: "Wallet Recharge",
+      order_id: order.id,
+      handler: (response) => {
+        verifyPayment({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          amount: order.amount / 100,
+        });
+      },
+      prefill: {
+        name: "Student",
+        email: "",
+      },
+      theme: {
+        color: "#f97316",
+      },
+      modal: {
+        ondismiss: () => {
+          setIsProcessing(false);
+          toast.error("Payment cancelled");
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   const handleAddFunds = () => {
-    console.log("Add funds clicked, amount:", amount);
     const val = parseFloat(amount);
     if (!val || val <= 0) return toast.error("Enter a valid amount");
     if (val > 10000) return toast.error("Max ₹10,000 at a time");
-    console.log("Calling addFunds with:", { amount: val });
-    addFunds({ amount: val });
+    setIsProcessing(true);
+    createOrder({ amount: val });
   };
 
   const balance = walletData?.wallet?.balance || 0;
@@ -113,7 +159,7 @@ export default function StudentWallet() {
             animate={{ opacity: 1, y: 0 }}
             className="card p-5"
           >
-            <h3 className="font-heading font-bold text-white mb-4">Add Funds</h3>
+            <h3 className="font-heading font-bold text-white mb-4">Add Funds via Razorpay</h3>
 
             {/* Quick amounts */}
             <div className="grid grid-cols-4 gap-2 mb-4">
@@ -146,15 +192,15 @@ export default function StudentWallet() {
 
             <button
               onClick={handleAddFunds}
-              disabled={isPending}
+              disabled={isProcessing}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {isPending ? (
+              {isProcessing ? (
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <Plus size={15} />
-                  Add ₹{amount || "0"}
+                  <Zap size={15} />
+                  Pay ₹{amount || "0"} via Razorpay
                 </>
               )}
             </button>
