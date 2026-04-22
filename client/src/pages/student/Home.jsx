@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -7,15 +8,24 @@ import { getWalletApi } from "../../api/wallet";
 import { useAuthStore } from "../../store/authStore";
 import { logoutApi } from "../../api/auth";
 import toast from "react-hot-toast";
+import { searchItemsApi } from "../../api/cafes";
 
 export default function StudentHome() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-
+  const [search, setSearch] = useState("");
   const { data: cafesData, isLoading: cafesLoading } = useQuery({
     queryKey: ["cafes"],
     queryFn: () => getCafesApi().then((r) => r.data),
   });
+
+  const { data: searchData } = useQuery({
+    queryKey: ["search", search],
+    queryFn: () => searchItemsApi(search).then((r) => r.data),
+    enabled: search.length > 1,
+  });
+  
+  const searchItems = searchData?.items || [];
 
   const { data: walletData } = useQuery({
     queryKey: ["wallet"],
@@ -33,6 +43,10 @@ export default function StudentHome() {
 
   const cafes = cafesData?.cafes || [];
   const balance = walletData?.wallet?.balance || 0;
+  const filteredCafes = cafes.filter((cafe) =>
+    cafe.name.toLowerCase().includes(search.toLowerCase()) ||
+    cafe.location?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-dark-900">
@@ -118,7 +132,51 @@ export default function StudentHome() {
             </div>
           </button>
         </motion.div>
-
+        {/* Search bar */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, delay: 0.15 }}
+  className="relative"
+>
+  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+  <input
+    type="text"
+    placeholder="Search cafes or food items..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="input pl-10 text-sm"
+  />
+</motion.div>
+{/* Item search results */}
+{search.length > 1 && searchItems.length > 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <h3 className="font-heading font-bold text-white/50 text-xs uppercase tracking-widest mb-3">
+      Food Items
+    </h3>
+    <div className="space-y-2 mb-6">
+      {searchItems.map((item) => (
+        <motion.button
+          key={item._id}
+          onClick={() => navigate(`/menu/${item.cafe._id}`)}
+          className="card w-full p-3 flex items-center gap-3 hover:border-brand-500/30 transition-all text-left"
+        >
+          <div className="w-10 h-10 bg-brand-500/10 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+            🍴
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-heading font-semibold text-sm truncate">{item.name}</p>
+            <p className="text-white/30 text-xs font-body">{item.cafe?.name}</p>
+          </div>
+          <p className="text-brand-500 font-heading font-bold text-sm flex-shrink-0">₹{item.price}</p>
+        </motion.button>
+      ))}
+    </div>
+  </motion.div>
+)}
         {/* Cafes list */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -126,8 +184,10 @@ export default function StudentHome() {
           transition={{ duration: 0.4, delay: 0.2 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-bold text-lg text-white">Cafes on Campus</h2>
-            <span className="text-white/30 text-xs font-body">{cafes.length} available</span>
+          <h2 className="font-heading font-bold text-white text-lg">
+  {search ? `Results for "${search}"` : "Cafes on Campus"}
+</h2>
+<span className="text-white/30 text-xs font-body">{filteredCafes.length} available</span>
           </div>
 
           {cafesLoading ? (
@@ -149,9 +209,20 @@ export default function StudentHome() {
               <p className="text-4xl mb-3">🍽️</p>
               <p className="text-white/50 font-body text-sm">No cafes available yet</p>
             </div>
+           ) : filteredCafes.length === 0 ? (
+            <div className="card p-8 text-center">
+              <Search size={32} className="text-white/10 mx-auto mb-3" />
+              <p className="text-white/40 font-body text-sm">No cafes found for "{search}"</p>
+              <button
+                onClick={() => setSearch("")}
+                className="btn-ghost mt-3 text-sm inline-flex items-center gap-2"
+              >
+                Clear Search
+              </button>
+            </div>
           ) : (
             <div className="space-y-3">
-              {cafes.map((cafe, i) => (
+              {filteredCafes.map((cafe, i) => (
                 <motion.button
                   key={cafe._id}
                   initial={{ opacity: 0, x: -20 }}
