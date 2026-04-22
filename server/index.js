@@ -15,7 +15,7 @@ const app = express();
 app.use(helmet());
 app.use(cors({
   origin: [process.env.CLIENT_URL,
-    'https://qless1.onrender.com',
+    'https://qlesscollege.netlify.app',
     
   ],
   credentials: true
