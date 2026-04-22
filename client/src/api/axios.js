@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "https://qless1.onrender.com",
   withCredentials: true,
 });
 
@@ -39,7 +39,7 @@ api.interceptors.response.use(
         }
 
         const res = await axios.post(
-          "http://localhost:8000/api/auth/refresh",
+          "https://qless1.onrender.com",
           { refreshToken },
           { withCredentials: true }
         );

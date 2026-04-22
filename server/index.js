@@ -14,8 +14,12 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: [process.env.CLIENT_URL,
+    'https://qless1.onrender.com',
+    
+  ],
   credentials: true
+  
 }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10kb' }));
